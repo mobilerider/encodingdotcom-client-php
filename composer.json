@@ -1,0 +1,34 @@
+{
+    "name": "encodingcom-client-php",
+    "type": "library",
+    "description": "PHP wrapper library for Encoding.com API",
+    "keywords": ["encoding.com", "api", "wrapper", "restful", "client", "media", "process", "queue"],
+    "homepage": "http://www.mobilerider.com/",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Michel Perez",
+            "email": "michel@mobilerider.com"
+        }
+    ],
+    "autoload": {
+         "files": ["src/functions.php", "src/constants.php"],
+        "psr-4": {
+            "Encoding\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "EncodingTest\\": "tests/"
+        }
+    },
+    "require": {
+        "php": ">=5.5.0",
+        "guzzlehttp/guzzle": "~6.0",
+        "symfony/event-dispatcher": "v3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*"
+    }
+}
+
