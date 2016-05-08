@@ -142,6 +142,11 @@ class Media extends \Encoding\Generics\DataItem implements \Serializable
         $this->options = array_merge($this->options, $options);
     }
 
+    public function getOptions()
+    {
+        return $this->options;
+    }
+
     public function clearOptions()
     {
         $this->options = [];
