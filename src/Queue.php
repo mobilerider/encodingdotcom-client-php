@@ -27,7 +27,6 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
 
     private $options = [];
 
-
     public function __construct(Client $client, array $medias = null, array $options = null)
     {
         $this->client = $client;
@@ -307,15 +306,53 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
 
     public function add(Media $media, $process = true)
     {
-        if ($process) {
+        if ($media->isOnHold() && $process) {
             return $this->process($media);
         }
 
         if (!$media->isNew()) {
-            return [false, 'Media was already added'];
+            return [false, 'Media is already in the queue'];
         }
 
-        $action = Action::send(Action::AddMediaBenchmark, $media);
+        if (!$media->hasSources()) {
+            return [false, 'Media needs to have at least one source'];
+        }
+
+        $formatsData = [];
+
+        foreach ($media->getFormats() as $format) {
+            $formatsData[] = array_merge([
+                'output' => $format->getOutput(),
+                'destination' => $format->getDestinations(),
+            ], $format->getOptions());
+        }
+
+        $params = array_merge([
+            'source' => array_map('strval', $media->getSources()),
+        ], array_merge($this->getOptions(), $media->getOptions()));
+
+        if ($formatsData) {
+            // Do not create empty format parameter
+            $params['format'] = $formatsData;
+        }
+
+        if ($process) {
+            if (!$media->hasFormats()) {
+                return [false, 'Media must have at least one format'];
+            }
+
+            $response = $this->execute(ACTION_MEDIA_ADD_MEDIA, $media, $params);
+        } else {
+            $response = $this->execute(ACTION_MEDIA_ADD_MEDIA_BENCHMARK, $media, $params);
+        }
+
+        if ($response === false) {
+            return [false, 'error']; //TODO: get and return error msg from execute method
+        }
+
+        $media->initialize($response['MediaID']);
+
+        return [$response, true];
     }
 
     public function schedule(Media $media)
