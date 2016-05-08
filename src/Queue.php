@@ -111,6 +111,11 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         $this->options = array_merge($this->options, $options);
     }
 
+    public function getOptions()
+    {
+        return $this->options;
+    }
+
     // Receives only media object
     public function isScheduled(Media $media)
     {
