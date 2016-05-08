@@ -169,6 +169,7 @@ class Media extends \Encoding\Generics\DataItem implements \Serializable
     {
         $data = unserialize($serialized);
 
+        $this->isOnHold = $data['isOnHold'];
         $this->initialize($data['id'], $data['data']);
     }
 
