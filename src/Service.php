@@ -45,17 +45,21 @@ class Service
         return $this->getQueue()->get($id);
     }
 
-    public function prepare($source, array $formats, array $options)
+    public function prepare($source, array $formats = null, array $options = null)
     {
-        $media = new Media($source, $formats, $options);
+        $media = new Media((array)$source, $formats, $options);
 
         $this->user->getQueue()->add($media, false);
+
+        return $media;
     }
 
-    public function encode($source, array $formats, array $options)
+    public function encode($source, array $formats, array $options = null)
     {
-        $media = new Media($source, $formats, $options);
+        $media = new Media((array)$source, $formats, $options);
 
         $this->user->getQueue()->add($media);
+
+        return $media;
     }
 }
