@@ -46,48 +46,53 @@ class Parser
         $cleanData['sources'] = $sources;
         unset($data['sourcefile']);
 
-        $formats = $data['format'];
-        // Check if single format
-        if (!is_numeric(key($formats))) {
-            $formats = [$formats];
-        }
-        unset($data['format']);
+        $cleanData['formats'] = [];
 
-        foreach($formats as $format) {
-            $cleanFormat = [];
-
-            $cleanFormat['id'] = $format['id'];
-            unset($format['id']);
-
-            $cleanFormat['output'] = $format['output'];
-            unset($format['output']);
-
-            $destinationsStatus = $format['destination_status'];
-            $destinationsStatus = is_array($destinationsStatus) ? $destinationsStatus : [$destinationsStatus];
-            unset($format['destination_status']);
-
-            $destinations = $format['destination'];
-            $destinations = is_array($destinations) ? $destinations : [$destinations];
-            unset($format['destination']);
-
-            foreach ($destinations as $index => $destination) {
-                $cleanFormat['destinations'][$destination] = $destinationsStatus[$index];
+        if (isset($data['format'])) {
+            $formats = $data['format'];
+            // Check if single format
+            if (!is_numeric(key($formats))) {
+                $formats = [$formats];
             }
 
-            // Remove empty data
-            $format = array_filter($format, function($x) {
-                return !empty($x);
-            });
+            foreach($formats as $format) {
+                $cleanFormat = [];
 
-            // Resolve properties
-            $properties = array_flip(['status', 'created', 'started', 'finished', 'duration', 'converttime', 'convertedsize', 'queued']);
-            $cleanFormat['properties'] = array_intersect_key($format, $properties);
+                $cleanFormat['id'] = $format['id'];
+                unset($format['id']);
 
-            // Assumes rest of the data as options
-            $cleanFormat['options'] = array_diff_key($format, $properties);
+                $cleanFormat['output'] = $format['output'];
+                unset($format['output']);
 
-            $cleanData['formats'][] = $cleanFormat;
+                $destinationsStatus = $format['destination_status'];
+                $destinationsStatus = is_array($destinationsStatus) ? $destinationsStatus : [$destinationsStatus];
+                unset($format['destination_status']);
+
+                $destinations = $format['destination'];
+                $destinations = is_array($destinations) ? $destinations : [$destinations];
+                unset($format['destination']);
+
+                foreach ($destinations as $index => $destination) {
+                    $cleanFormat['destinations'][$destination] = $destinationsStatus[$index];
+                }
+
+                // Remove empty data
+                $format = array_filter($format, function($x) {
+                    return !empty($x);
+                });
+
+                // Resolve properties
+                $properties = array_flip(['status', 'created', 'started', 'finished', 'duration', 'converttime', 'convertedsize', 'queued']);
+                $cleanFormat['properties'] = array_intersect_key($format, $properties);
+
+                // Assumes rest of the data as options
+                $cleanFormat['options'] = array_diff_key($format, $properties);
+
+                $cleanData['formats'][] = $cleanFormat;
+            }
         }
+
+        unset($data['format']);
 
         $data = array_filter($data, function($x) {
             return !empty($x);
