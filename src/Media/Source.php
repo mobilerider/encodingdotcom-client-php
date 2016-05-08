@@ -25,6 +25,11 @@ class Source extends \Encoding\Generics\DataItem
         return $this->location;
     }
 
+    public function __toString()
+    {
+        return $this->getLocation();
+    }
+
     public function update(array $data, $extended = false)
     {
         $this->setData($data);
