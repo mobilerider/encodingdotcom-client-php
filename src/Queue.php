@@ -310,47 +310,56 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
             return $this->process($media);
         }
 
-        if (!$media->isNew()) {
-            return [false, 'Media is already in the queue'];
-        }
-
-        if (!$media->hasSources()) {
-            return [false, 'Media needs to have at least one source'];
-        }
-
-        $formatsData = [];
-
-        foreach ($media->getFormats() as $format) {
-            $formatsData[] = array_merge([
-                'output' => $format->getOutput(),
-                'destination' => $format->getDestinations(),
-            ], $format->getOptions());
-        }
-
-        $params = array_merge([
-            'source' => array_map('strval', $media->getSources()),
-        ], array_merge($this->getOptions(), $media->getOptions()));
-
-        if ($formatsData) {
-            // Do not create empty format parameter
-            $params['format'] = $formatsData;
-        }
-
-        if ($process) {
-            if (!$media->hasFormats()) {
-                return [false, 'Media must have at least one format'];
+        try {
+            if (!$media->isNew()) {
+                throw new EncodingException('Media is already in the queue');
             }
 
-            $response = $this->execute(ACTION_MEDIA_ADD_MEDIA, $media, $params);
-        } else {
-            $response = $this->execute(ACTION_MEDIA_ADD_MEDIA_BENCHMARK, $media, $params);
-        }
+            if (!$media->hasSources()) {
+                throw new EncodingException('Media needs to have at least one source');
+            }
 
-        if ($response === false) {
-            return [false, 'error']; //TODO: get and return error msg from execute method
-        }
+            $formatsData = [];
 
-        $media->initialize($response['MediaID']);
+            foreach ($media->getFormats() as $format) {
+                $formatsData[] = array_merge([
+                    'output' => $format->getOutput(),
+                    'destination' => $format->getDestinations(),
+                ], $format->getOptions());
+            }
+
+            $params = array_merge(
+                ['source' => array_map('strval', $media->getSources())],
+                array_merge($this->getOptions(), $media->getOptions())
+            );
+
+            if ($formatsData) {
+                // Do not create empty format parameter
+                $params['format'] = $formatsData;
+            }
+
+            if ($process) {
+                if (!$media->hasFormats()) {
+                    throw new EncodingException('Media must have at least one format');
+                }
+
+                $response = $this->execute(ACTION_MEDIA_ADD_MEDIA, $media, $params);
+            } else {
+                $response = $this->execute(ACTION_MEDIA_ADD_MEDIA_BENCHMARK, $media, $params);
+            }
+
+            if ($response === false) {
+                // TODO: get actual encoding error
+                $media->setError('Request error');
+                throw new EncodingException('Request error');
+            }
+
+            $media->initialize($response['MediaID']);
+        } catch (EncodingExceptionInterface $ex) {
+            return [false, $ex->getMessage()];
+        } finally {
+            $this->setMedia($media);
+        }
 
         return [$response, true];
     }
