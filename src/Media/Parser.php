@@ -27,6 +27,23 @@ class Parser
         return $data;
     }
 
+    public static function parseMediaList($data)
+    {
+        $cleanData = [];
+        $exemptKeys = ['mediaid', 'mediafile', 'mediastatus'];
+
+        foreach ($data['media'] as $mediaData) {
+            $cleanData[] = [
+                'id' => $mediaData['mediaid'],
+                'status' => $mediaData['mediastatus'],
+                'sources' => [$mediaData['mediafile']],
+                'properties' => array_diff_key($mediaData, $exemptKeys)
+            ];
+        }
+
+        return $cleanData;
+    }
+
     public static function parseMediaStatus($data)
     {
         $cleanData = [];

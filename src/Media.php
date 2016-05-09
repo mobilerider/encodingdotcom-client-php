@@ -153,13 +153,6 @@ class Media extends \MobileRider\Encoding\Generics\DataItem implements \Serializ
         $this->options = [];
     }
 
-    public function initialize($id, array $data = null)
-    {
-        parent::initialize($id, $data);
-
-        $this->setStatus(self::STATUS_NEW);
-    }
-
     public function setStatus($status)
     {
         $this->set('status', $status);
@@ -194,6 +187,11 @@ class Media extends \MobileRider\Encoding\Generics\DataItem implements \Serializ
     public function isReady()
     {
         return $this->getStatus() == self::STATUS_READY;
+    }
+
+    public function isDone()
+    {
+        return $this->getStatus() == self::STATUS_FINISHED;
     }
 
     public function setError($msg)

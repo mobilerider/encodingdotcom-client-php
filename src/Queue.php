@@ -214,18 +214,18 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         return array_splice($this->$listName, $index, 1);
     }
 
-    public function execute($action, Media $media, array $params = null)
+    public function execute($action, Media $media = null, array $params = [])
     {
-        if ($media->isNew()) {
-            if ($action != ACTION_MEDIA_ADD_MEDIA && $action != ACTION_MEDIA_ADD_MEDIA_BENCHMARK) {
-                throw new Exception('Media ID needs to be specified');
+        if ($media) {
+            if ($media->isNew()) {
+                if ($action != ACTION_MEDIA_ADD_MEDIA && $action != ACTION_MEDIA_ADD_MEDIA_BENCHMARK) {
+                    throw new Exception('Media ID needs to be specified');
+                }
+            } else {
+                $params = [
+                    'mediaid' => $media->getId()
+                ];
             }
-        } else {
-            $params = [
-                'mediaid' => $media->getId()
-            ];
-
-            $params += $params;
         }
 
         return $this->client->requestAction($action, $params);
@@ -234,6 +234,14 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
     public function validate(Media $item)
     {
 
+    }
+
+    public function clear()
+    {
+        $this->onHold = [];
+        $this->encoding = [];
+        $this->error = [];
+        $this->done = [];
     }
 
     protected function notifyStatusChange($media, $oldStatus)
@@ -261,13 +269,25 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         return $media;
     }
 
-    public function process(Media $media)
+    public function loadAllMedias()
     {
-        if ($media->isEncoding()) {
-            return [false, 'Media is already being processed'];
+        $response = $this->execute(ACTION_MEDIA_GET_MEDIA_LIST);
+
+        $this->clear();
+
+        $data = Parser::parseMediaList($response);
+
+        foreach ($data as $mediaData) {
+            $media = new Media($mediaData['sources']);
+            $media->initialize($mediaData['id'], $mediaData['properties']);
+            $media->setStatus($mediaData['status']);
+
+            $this->setMedia($media);
         }
 
-        // Check for errors first since a media may be done
+        return $response;
+    }
+
         // but contains errors in its formats encoding
         if ($media->hasError()) {
             if ($media->isError()) {
@@ -357,6 +377,7 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
             }
 
             $media->initialize($response['MediaID']);
+            $media->setStatus(Media::STATUS_NEW);
         } catch (EncodingExceptionInterface $ex) {
             return [false, $ex->getMessage()];
         } finally {
