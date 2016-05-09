@@ -1,8 +1,8 @@
 <?php
 
-namespace Encoding;
+namespace MobileRider\Encoding;
 
-class User extends \Encoding\Generics\DataItem
+class User extends \MobileRider\Encoding\Generics\DataItem
 {
     private $key = null;
     private $client = null;
@@ -19,8 +19,8 @@ class User extends \Encoding\Generics\DataItem
         $this->initialize($id);
         $this->key = $key;
 
-        $this->client = new \Encoding\Client($id, $key);
-        $this->queue = new \Encoding\Queue($this->client);
+        $this->client = new \MobileRider\Encoding\Client($id, $key);
+        $this->queue = new \MobileRider\Encoding\Queue($this->client);
     }
 
     public function getQueue()

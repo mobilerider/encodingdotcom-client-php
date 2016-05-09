@@ -1,8 +1,8 @@
 <?php
 
-namespace Encoding\Media;
+namespace MobileRider\Encoding\Media;
 
-class Format extends \Encoding\Generics\DataItem
+class Format extends \MobileRider\Encoding\Generics\DataItem
 {
     private $output = '';
     private $destinations = [];

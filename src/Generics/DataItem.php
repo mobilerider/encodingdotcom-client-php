@@ -1,6 +1,6 @@
 <?php
 
-namespace Encoding\Generics;
+namespace MobileRider\Encoding\Generics;
 
 class DataItem
 {

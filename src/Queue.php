@@ -1,8 +1,10 @@
 <?php
+/**
+ * Class Queue
+ */
+namespace MobileRider\Encoding;
 
-namespace Encoding;
-
-use Encoding\Media\Parser;
+use \MobileRider\Encoding\Media\Parser;
 
 class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countable
 {
@@ -421,10 +423,16 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
 
                 foreach ($sourceData['streams'] as $type => $tracks) {
                     foreach ($tracks as $id => &$track) {
-                        $track = new \Encoding\Media\Track($id, $type, $track);
+                        $track = new \MobileRider\Encoding\Media\Track(
+                            $id, $type, $track
+                        );
                     }
 
-                    $source->setStream(new \Encoding\Media\Stream($type, array_values($tracks)));
+                    $source->setStream(
+                        new \MobileRider\Encoding\Media\Stream(
+                            $type, array_values($tracks)
+                        )
+                    );
                 }
             }
         }
@@ -449,7 +457,7 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         $media->clearSources();
 
         foreach ($data['sources'] as $location) {
-            $source = new \Encoding\Media\Source($location);
+            $source = new \MobileRider\Encoding\Media\Source($location);
 
             $media->addSource($source);
         }
@@ -457,7 +465,7 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         $media->clearFormats();
 
         foreach ($data['formats'] as $formatData) {
-            $format = new \Encoding\Media\Format($formatData['output'], $formatData['destinations'], $formatData['options']);
+            $format = new \MobileRider\Encoding\Media\Format($formatData['output'], $formatData['destinations'], $formatData['options']);
             $format->initialize($formatData['id'], $formatData['properties']);
 
             $media->addFormat($format);

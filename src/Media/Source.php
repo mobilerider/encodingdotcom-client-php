@@ -1,8 +1,8 @@
 <?php
 
-namespace Encoding\Media;
+namespace MobileRider\Encoding\Media;
 
-class Source extends \Encoding\Generics\DataItem
+class Source extends \MobileRider\Encoding\Generics\DataItem
 {
     private $location = '';
     private $isExtended = false;

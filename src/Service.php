@@ -1,6 +1,6 @@
 <?php
 
-namespace Encoding;
+namespace MobileRider\Encoding;
 
 class Service
 {

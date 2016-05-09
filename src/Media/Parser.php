@@ -1,6 +1,6 @@
 <?php
 
-namespace Encoding\Media;
+namespace MobileRider\Encoding\Media;
 
 class Parser
 {

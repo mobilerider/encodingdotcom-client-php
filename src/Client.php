@@ -1,6 +1,6 @@
 <?php
 
-namespace Encoding;
+namespace MobileRider\Encoding;
 
 class Client
 {
@@ -35,7 +35,7 @@ class Client
 
         $payload = json_encode($payload);
 
-        $response = \Encoding\Service::getHttpClient()->post('', array(
+        $response = \MobileRider\Encoding\Service::getHttpClient()->post('', array(
             // This will include needed content type
             // 'ContentType' => 'application/x-www-form-urlencoded'
             \GuzzleHttp\RequestOptions::FORM_PARAMS => array(

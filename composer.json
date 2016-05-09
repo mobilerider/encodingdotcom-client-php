@@ -2,7 +2,7 @@
     "name": "encodingdotcom-client-php",
     "type": "library",
     "description": "PHP wrapper library for Encoding.com API",
-    "keywords": ["encodingdotcom", "encoding", "encoding.com", "api", "wrapper", "restful", "client", "media", "process", "queue"],
+    "keywords": ["encodingdotcom", "encoding", "encoding.com", "api", "wrapper", "restful", "client", "media", "process", "queue", "video"],
     "homepage": "http://www.mobilerider.com/",
     "license": "MIT",
     "authors": [
@@ -14,12 +14,12 @@
     "autoload": {
          "files": ["src/functions.php", "src/constants.php"],
         "psr-4": {
-            "Encoding\\": "src/"
+            "MobileRider\\Encoding\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "EncodingTest\\": "tests/"
+            "MobileRider\\EncodingTest\\": "tests/"
         }
     },
     "require": {

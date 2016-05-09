@@ -1,8 +1,8 @@
 <?php
 
-namespace Encoding;
+namespace MobileRider\Encoding;
 
-class Media extends \Encoding\Generics\DataItem implements \Serializable
+class Media extends \MobileRider\Encoding\Generics\DataItem implements \Serializable
 {
     const STATUS_NEW         = 'New';
     const STATUS_DOWNLOADING = 'Downloading';
@@ -54,7 +54,7 @@ class Media extends \Encoding\Generics\DataItem implements \Serializable
     public function addSource($source)
     {
         if (is_string($source)) {
-            $source = new \Encoding\Media\Source($source);
+            $source = new \MobileRider\Encoding\Media\Source($source);
         }
 
         $this->sources[] = $source;
@@ -75,7 +75,7 @@ class Media extends \Encoding\Generics\DataItem implements \Serializable
         return (bool) $this->sources;
     }
 
-    public function addFormat(\Encoding\Media\Format $format)
+    public function addFormat(\MobileRider\Encoding\Media\Format $format)
     {
         $this->formats[] = $format;
     }

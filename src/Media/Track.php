@@ -1,8 +1,8 @@
 <?php
 
-namespace Encoding\Media;
+namespace MobileRider\Encoding\Media;
 
-class Track extends \Encoding\Generics\DataItem
+class Track extends \MobileRider\Encoding\Generics\DataItem
 {
     const TYPE_VIDEO = 'video-track-type';
     const TYPE_AUDIO = 'audio-track-type';

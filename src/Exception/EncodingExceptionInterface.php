@@ -1,5 +1,5 @@
 <?php
 
-namespace Encoding\Exception;
+namespace MobileRider\Encoding\Exception;
 
 interface EncodingExceptionInterface {}
