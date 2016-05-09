@@ -31,6 +31,7 @@ class Media extends \Encoding\Generics\DataItem implements \Serializable
     private $sources = [];
     private $formats = [];
     private $options = [];
+    private $error = '';
 
     private $isExtended = false;
     private $isOnHold = false;
@@ -152,6 +153,18 @@ class Media extends \Encoding\Generics\DataItem implements \Serializable
         $this->options = [];
     }
 
+    public function initialize($id, array $data = null)
+    {
+        parent::initialize($id, $data);
+
+        $this->setStatus(self::STATUS_NEW);
+    }
+
+    public function setStatus($status)
+    {
+        $this->set('status', $status);
+    }
+
     public function update(array $data, array $options = null, $extended = false)
     {
         $this->setData($data);
@@ -176,6 +189,37 @@ class Media extends \Encoding\Generics\DataItem implements \Serializable
 
         $this->isOnHold = $data['isOnHold'];
         $this->initialize($data['id'], $data['data']);
+    }
+
+    public function isReady()
+    {
+        return $this->getStatus() == self::STATUS_READY;
+    }
+
+    public function setError($msg)
+    {
+        $this->error = $msg;
+        $this->setStatus(self::STATUS_ERROR);
+    }
+
+    public function isError()
+    {
+        return $this->getStatus() == self::STATUS_ERROR;
+    }
+
+    public function hasError()
+    {
+        if ($this->isError()) {
+            return true;
+        }
+
+        foreach($this->getFormats() as $format) {
+            if ($format->isError()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function getVideoTrack()
