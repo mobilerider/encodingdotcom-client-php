@@ -469,6 +469,8 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
 
         $media->update($data['properties']);
 
+        $this->setMedia($media);
+
         return $response;
     }
 
