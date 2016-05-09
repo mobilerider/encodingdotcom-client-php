@@ -8,24 +8,24 @@ class Media extends \Encoding\Generics\DataItem implements \Serializable
     const STATUS_DOWNLOADING = 'Downloading';
     const STATUS_DOWNLOADED  = 'Downloaded';
     const STATUS_READY       = 'Ready to process';
-    const STAUTS_WAITING     = 'Waiting for encoder';
-    const STAUTS_PROCESSING  = 'Processing';
-    const STAUTS_SAVING      = 'Saving';
+    const STATUS_WAITING     = 'Waiting for encoder';
+    const STATUS_PROCESSING  = 'Processing';
+    const STATUS_SAVING      = 'Saving';
     const STATUS_FINISHED    = 'Finished';
-    const STAUTS_ERROR       = 'Error';
-    const STAUTS_STOPPED     = 'Stopped Perform';
+    const STATUS_ERROR       = 'Error';
+    const STATUS_STOPPED     = 'Stopped Perform';
 
     private static $availableStatuses = array(
         self::STATUS_NEW,
         self::STATUS_DOWNLOADING,
         self::STATUS_DOWNLOADED,
         self::STATUS_READY,
-        self::STAUTS_WAITING,
-        self::STAUTS_PROCESSING,
-        self::STAUTS_SAVING,
+        self::STATUS_WAITING,
+        self::STATUS_PROCESSING,
+        self::STATUS_SAVING,
         self::STATUS_FINISHED,
-        self::STAUTS_ERROR,
-        self::STAUTS_STOPPED
+        self::STATUS_ERROR,
+        self::STATUS_STOPPED
     );
 
     private $sources = [];
@@ -106,7 +106,7 @@ class Media extends \Encoding\Generics\DataItem implements \Serializable
             self::STATUS_DOWNLOADED,
             self::STATUS_DOWNLOADING,
             self::STATUS_READY,
-            self::STAUTS_WAITING,
+            self::STATUS_WAITING,
             self::STATUS_PROCESSING,
             self::STATUS_SAVING
         ));
