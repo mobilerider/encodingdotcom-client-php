@@ -6,8 +6,8 @@ use Encoding\Media\Parser;
 
 class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countable
 {
-    const LIST_NEW = 'new';
-    const LIST_ADDED = 'added';
+    const LIST_LOCAL = 'local';
+    const LIST_ON_HOLD = 'onHold';
     const LIST_ENCODING = 'encoding';
     const LIST_DONE = 'done';
     const LIST_ERROR = 'error';
@@ -15,9 +15,9 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
     protected $client = null;
 
     // New medias, exist only locally
-    private $new = [];
+    private $local = [];
     // Active medias
-    private $added = [];
+    private $onHold = [];
     private $encoding = [];
     private $done = [];
     private $error = [];
@@ -79,14 +79,14 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
     {
         $data = [
             'lists' => [
-                'added' => array_map($this->added, serialize),
-                'encoding' => array_map($this->encoding, serialize),
-                'error' => array_map($this->error, serialize)
+                'onHold' => array_map('serialize', $this->onHold),
+                'encoding' => array_map('serialize', $this->encoding),
+                'error' => array_map('serialize', $this->error)
             ],
             'options' => $this->options
         ];
 
-        return serialize($this->getPersistentData());
+        return serialize($data);
     }
 
     public function unserialize($data)
@@ -118,7 +118,7 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
     // Receives only media object
     public function isScheduled(Media $media)
     {
-        return array_search($media, $this->new);
+        return array_search($media, $this->local);
     }
 
     protected function resolveId($value)
@@ -143,7 +143,7 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
             $i = $this->isScheduled($media);
 
             if ($index !== false) {
-                $listName = self::LIST_NEW;
+                $listName = self::LIST_LOCAL;
                 $index = $i;
             }
         }
@@ -173,9 +173,9 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
 
         if ($media->isNew()) {
             if ($this->isScheduled($media) === false) {
-                $this->new[] = $media;
+                $this->local[] = $media;
             }
-            $listName = self::LIST_NEW;
+            $listName = self::LIST_LOCAL;
         } else {
             // Removes media from any current list
             $oldListName = $this->unsetMedia($media);
@@ -187,7 +187,7 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
             } else if ($media->isDone()) {
                 $listName = self::LIST_DONE;
             } else {
-                $listName = self::LIST_ADDED;
+                $listName = self::LIST_ON_HOLD;
             }
 
             // Puts media in corresponding list indexed by id
