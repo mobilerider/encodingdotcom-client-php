@@ -374,39 +374,27 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         $this->add($media, false);
     }
 
+    public function process(Media $media)
+    {
+        if (!$media->isOnHold() && $media->isReady()) {
+            return [false, 'Media is not on hold or not ready to process'];
+        }
+
+        try {
+            $response = $this->execute(ACTION_MEDIA_PROCESS_MEDIA, $media, $params);
+            $media->setStatus(Media::STATUS_PROCESSING);
+        } catch (EncodingExceptionInterface $ex) {
+            return [false, $ex->getMessage()];
+        } finally {
+            $this->setMedia($media);
+        }
+
+        return $response;
+    }
+
     public function cancel(Media $media)
     {
 
-    }
-
-    // Add if needed and process media
-    public function processMedia(Media $media)
-    {
-        $data = [
-            'source' => ''
-        ];
-
-        if ($this->hasSources()) {
-            if ($this->hasMultipleSources()) {
-                $data['source'] = [];
-
-                foreach ($this->sources as $source) {
-                    $data['source'][] = $source->getLocation();
-                }
-            } else {
-                $data['source'] = $this->getSources()[0]->getLocation();
-            }
-        }
-
-        $data['format'] = [];
-
-        foreach ($this->formats as $format) {
-            $format = array_merge([
-                'output' => $format->getOutput()
-            ], $format->getOptions());
-
-            $data['format'][] = $format;
-        }
     }
 
     public function getSourcesInfo($media, $extended = false)
