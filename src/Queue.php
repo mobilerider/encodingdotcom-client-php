@@ -5,6 +5,8 @@
 namespace MobileRider\Encoding;
 
 use \MobileRider\Encoding\Media\Parser;
+use \MobileRider\Encoding\Event\ModelEvent;
+use \MobileRider\Encoding\Event\ModelPropertyChangedEvent;
 
 class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countable
 {
@@ -13,6 +15,11 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
     const LIST_ENCODING = 'encoding';
     const LIST_DONE = 'done';
     const LIST_ERROR = 'error';
+
+    const EVENT_MEDIA_ADDED_TO_QUEUE = 'event-media-added-to-queue';
+    const EVENT_MEDIA_STATUS_CHANGED = 'event-media-status-changed';
+    const EVENT_MEDIA_PROGRESS_CHANGED = 'event-media-progress-changed';
+    const EVENT_MEDIA_ERROR = 'event-media-error';
 
     protected $client = null;
 
@@ -32,6 +39,7 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
     public function __construct(Client $client, array $medias = null, array $options = null)
     {
         $this->client = $client;
+        $this->eventDispatcher = new \Symfony\Component\EventDispatcher\EventDispatcher();
 
         if ($medias) {
             $this->addMedias($medias);
@@ -214,6 +222,43 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         return array_splice($this->$listName, $index, 1);
     }
 
+    protected function updateMedia($media, $id, $status, $data, $extended)
+    {
+        $oldStatus = $media->getStatus();
+        $oldProgress = $media->getProgress();
+
+        $media->setStatus($status);
+        $media->update($data, null, $extended);
+
+        if ($media->isNew() && $id) {
+            $media->initialize($id);
+
+            $modelEvent = new ModelEvent();
+            $modelEvent->setObject($media);
+            $this->eventDispatcher->dispatch(
+                self::EVENT_MEDIA_ADDED_TO_QUEUE, $modelEvent
+            );
+        }
+
+        if ($oldStatus != $media->getStatus()) {
+            $propertyEvent = new ModelPropertyChangedEvent();
+            $propertyEvent->setObject($media);
+            $propertyEvent->setOldValue($oldStatus);
+
+            $this->eventDispatcher->dispatch(self::EVENT_MEDIA_STATUS_CHANGED, $propertyEvent);
+        }
+
+        if ($oldProgress != $media->getProgress()) {
+            $propertyEvent = new ModelPropertyChangedEvent();
+            $propertyEvent->setObject($media);
+            $propertyEvent->setOldValue($oldStatus);
+
+            $this->eventDispatcher->dispatch(self::EVENT_MEDIA_PROGRESS_CHANGED, $propertyEvent);
+        }
+
+        $this->setMedia($media);
+    }
+
     public function execute($action, Media $media = null, array $params = [])
     {
         if ($media) {
@@ -244,9 +289,10 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         $this->done = [];
     }
 
-    protected function notifyStatusChange($media, $oldStatus)
+    public function subscribe(\Symfony\Component\EventDispatcher\EventSubscriberInterface $subscriber
+)
     {
-
+        $this->eventDispatcher->addSubscriber($subscriber);
     }
 
     public function get($id)
@@ -273,50 +319,65 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
     {
         $response = $this->execute(ACTION_MEDIA_GET_MEDIA_LIST);
 
-        $this->clear();
-
         $data = Parser::parseMediaList($response);
 
         foreach ($data as $mediaData) {
-            $media = new Media($mediaData['sources']);
-            $media->initialize($mediaData['id'], $mediaData['properties']);
-            $media->setStatus($mediaData['status']);
+            // TODO: maybe this should go inside updateMedia method
+            if (!($media = $this->findMedia($mediaData['id']))) {
+                $media = new Media($mediaData['sources']);
+            } else {
+                $media->clear();
+            }
 
-            $this->setMedia($media);
+            $this->updateMedia($media, $mediaData['id'], $mediaData['status'], $mediaData['properties'], false);
         }
 
         return $response;
     }
 
+    //public function __()
+    //{
+        // Check for errors first since a media may be done
         // but contains errors in its formats encoding
-        if ($media->hasError()) {
-            if ($media->isError()) {
-                return $this->restart($media);
-            } else {
-                return $this->restartFormatsWithError($media);
-            }
-        }
+        //if ($media->hasError()) {
+            //if ($media->isError()) {
+                //return $this->restart($media);
+            //} else {
+                //return $this->restartFormatsWithError($media);
+            //}
+        //}
 
-        if ($media->isDone()) {
-            return [false, 'Media was already processed'];
-        }
+        //if ($media->isDone()) {
+            //return [false, 'Media was already processed'];
+        //}
 
+        //$oldStatus = $media->getStatus();
+
+        //if ($this->media->isOnHold()) {
+            //// Start encoding on a media previously added to encoding queue (prepared)
+            //$action = Action::send(Action::ProcessMedia, $media);
+        //} else {
+            //$action = Action::send(Action::AddMedia, $media);
+        //}
+
+        //// Switch media list according to new status
+        //$this->setMedia($media);
+    //}
+
+    protected function setMediaError($media, $errorMsg)
+    {
         $oldStatus = $media->getStatus();
 
-        if ($this->media->isOnHold()) {
-            // Start encoding on a media previously added to encoding queue (prepared)
-            $action = Action::send(Action::ProcessMedia, $media);
-        } else {
-            $action = Action::send(Action::AddMedia, $media);
+        $media->setError($errorMsg);
+
+        $modelEvent = new ModelEvent();
+        $modelEvent->setObject($media);
+
+        $this->eventDispatcher->dispatch(self::EVENT_MEDIA_ERROR, $modelEvent);
+
+        if ($oldStatus != $media->getStatus()) {
+            $this->eventDispatcher->dispatch(self::EVENT_MEDIA_STATUS_CHANGED, $modelEvent);
         }
-
-        // Switch media list according to new status
-        $this->setMedia($media);
-
-        // Notify this media's status changed
-        $this->notifyStatusChange($media, $oldStatus);
-
-        return $action->isSuccessful();
     }
 
     public function addMedias($medias, $process = true)
@@ -372,12 +433,11 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
 
             if ($response === false) {
                 // TODO: get actual encoding error
-                $media->setError('Request error');
+                $media->setMediaError('Request error');
                 throw new EncodingException('Request error');
             }
 
-            $media->initialize($response['MediaID']);
-            $media->setStatus(Media::STATUS_NEW);
+            $this->updateMedia($media, $response['MediaID'], Media::STATUS_NEW);
         } catch (EncodingExceptionInterface $ex) {
             return [false, $ex->getMessage()];
         } finally {
@@ -405,14 +465,13 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
 
         try {
             $response = $this->execute(ACTION_MEDIA_PROCESS_MEDIA, $media, $params);
-            $media->setStatus(Media::STATUS_PROCESSING);
+            $this->updateMedia($media, $media->getId(), Media::STATUS_PROCESSING);
         } catch (EncodingExceptionInterface $ex) {
+            $this->setMediaError($media, $ex->getMessage());
             return [false, $ex->getMessage()];
-        } finally {
-            $this->setMedia($media);
         }
 
-        return $response;
+        return [$response, true];
     }
 
     public function cancel(Media $media)
@@ -471,7 +530,7 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
 
         $data = Parser::parseMediaStatus($response);
 
-        if ($media->getId() != $data['id']) {
+        if (!$media->isNew() && $media->getId() != $data['id']) {
             throw new Exception('Media Ids do not match');
         }
 
@@ -496,9 +555,7 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
             $media->setOptions($data['options']);
         }
 
-        $media->update($data['properties']);
-
-        $this->setMedia($media);
+        $this->updateMedia($media, $data['id'], $data['status'], $data['properties'], $extended);
 
         return $response;
     }

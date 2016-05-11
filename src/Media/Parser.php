@@ -54,6 +54,9 @@ class Parser
         $cleanData['userId'] = $data['userid'];
         unset($data['userid']);
 
+        $cleanData['status'] = $data['status'];
+        unset($data['status']);
+
         $sources = $data['sourcefile'];
 
         if (!is_array($sources)) {
