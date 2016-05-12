@@ -174,7 +174,9 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
             return $listName ? $this->$listName[$index] : null;
         }
 
-        return array_key_exists($id, $this->$listName) ? $this->$listName[$id] : null;
+        $list = $this->$listName;
+
+        return array_key_exists($id, $list) ? $list[$id] : null;
     }
 
     protected function setMedia(Media $media)
