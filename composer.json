@@ -1,5 +1,5 @@
 {
-    "name": "encodingdotcom-client-php",
+    "name": "mobilerider/encodingdotcom-client-php",
     "type": "library",
     "description": "PHP wrapper library for Encoding.com API",
     "version": "0.0.2",
