@@ -1,8 +1,8 @@
 {
-    "name": "encodingdotcom-client-php",
+    "name": "mobilerider/encodingdotcom-client-php",
     "type": "library",
     "description": "PHP wrapper library for Encoding.com API",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "keywords": ["encodingdotcom", "encoding", "encoding.com", "api", "wrapper", "restful", "client", "media", "process", "queue", "video"],
     "homepage": "http://www.mobilerider.com/",
     "license": "MIT",
