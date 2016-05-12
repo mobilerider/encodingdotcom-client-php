@@ -38,7 +38,7 @@ class Service
 
     public function getQueue($userId = null)
     {
-        if ($userId) {
+        if ($userId && $userId != $this->getUser()->getId()) {
             return $this->getUser()->getSubUser($userId)->getQueue();
         }
 
