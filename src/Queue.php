@@ -576,14 +576,15 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
             return false;
         }
 
-        $data = Parser::parseMediaStatus($response, true);
+        $data = Parser::parseMediaStatus($response, true); // Always extended
 
         if (!$data) {
             return false;
         }
 
         foreach ($data as $statusData) {
-            $this->updateMediaStatus($media, $statusData, $extended);
+            $media = $this->findMedia($statusData['id'], self::LIST_ENCODING);
+            $this->updateMediaStatus($media, $statusData, true); // Always extended
         }
 
         return $response;
