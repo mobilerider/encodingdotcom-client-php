@@ -31,13 +31,18 @@ class Service
         return self::$httpClient;
     }
 
+    public function getUser()
+    {
+        return $this->user;
+    }
+
     public function getQueue($userId = null)
     {
         if ($userId) {
-            return $this->user->getSubUser($userId)->getQueue();
+            return $this->getUser()->getSubUser($userId)->getQueue();
         }
 
-        return $this->user->getQueue();
+        return $this->getUser()->getQueue();
     }
 
     public function getMedia($id)
@@ -49,7 +54,7 @@ class Service
     {
         $media = new Media((array)$source, $formats, $options);
 
-        $this->user->getQueue()->add($media, false);
+        $this->getUser()->getQueue()->add($media, false);
 
         return $media;
     }
@@ -58,7 +63,7 @@ class Service
     {
         $media = new Media((array)$source, $formats, $options);
 
-        $this->user->getQueue()->add($media);
+        $this->getUser()->getQueue()->add($media);
 
         return $media;
     }
