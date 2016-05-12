@@ -259,17 +259,16 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         $this->setMedia($media);
     }
 
-    public function execute($action, Media $media = null, array $params = [])
+    public function execute($action, $media = null, array $params = [])
     {
         if ($media) {
-            if ($media->isNew()) {
+            if (!is_array($media) && $media->isNew()) {
                 if ($action != ACTION_MEDIA_ADD_MEDIA && $action != ACTION_MEDIA_ADD_MEDIA_BENCHMARK) {
                     throw new Exception('Media ID needs to be specified');
                 }
             } else {
-                $params = [
-                    'mediaid' => $media->getId()
-                ];
+                $mediaId = is_array($media) ? implode(',', array_map(function($m) { return $m->getId(); }, $media)) : $media->getId() ;
+                $params['mediaid'] = $mediaId;
             }
         }
 
