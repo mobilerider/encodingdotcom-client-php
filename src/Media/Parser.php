@@ -44,83 +44,95 @@ class Parser
         return $cleanData;
     }
 
-    public static function parseMediaStatus($data)
+    public static function parseMediaStatus($data, $extended = false)
     {
-        $cleanData = [];
-
-        $cleanData['id'] = $data['id'];
-        unset($data['id']);
-
-        $cleanData['userId'] = $data['userid'];
-        unset($data['userid']);
-
-        $cleanData['status'] = $data['status'];
-        unset($data['status']);
-
-        $sources = $data['sourcefile'];
-
-        if (!is_array($sources)) {
-            $sources = [$sources];
+        if ($extended) {
+            $data = $data['job'];
+        } else {
+            $data = [$data];
         }
 
-        $cleanData['sources'] = $sources;
-        unset($data['sourcefile']);
+        $statuses = [];
 
-        $cleanData['formats'] = [];
+        foreach ($data as $statusData) {
+            $cleanData = [];
 
-        if (isset($data['format'])) {
-            $formats = $data['format'];
-            // Check if single format
-            if (!is_numeric(key($formats))) {
-                $formats = [$formats];
+            $cleanData['id'] = $data['id'];
+            unset($statusData['id']);
+
+            $cleanData['userId'] = $statusData['userid'];
+            unset($statusData['userid']);
+
+            $cleanData['status'] = $statusData['status'];
+            unset($statusData['status']);
+
+            $sources = $statusData['sourcefile'];
+
+            if (!is_array($sources)) {
+                $sources = [$sources];
             }
 
-            foreach($formats as $format) {
-                $cleanFormat = [];
+            $cleanData['sources'] = $sources;
+            unset($statusData['sourcefile']);
 
-                $cleanFormat['id'] = $format['id'];
-                unset($format['id']);
+            $cleanData['formats'] = [];
 
-                $cleanFormat['output'] = $format['output'];
-                unset($format['output']);
-
-                $destinationsStatus = $format['destination_status'];
-                $destinationsStatus = is_array($destinationsStatus) ? $destinationsStatus : [$destinationsStatus];
-                unset($format['destination_status']);
-
-                $destinations = $format['destination'];
-                $destinations = is_array($destinations) ? $destinations : [$destinations];
-                unset($format['destination']);
-
-                foreach ($destinations as $index => $destination) {
-                    $cleanFormat['destinations'][$destination] = $destinationsStatus[$index];
+            if (isset($statusData['format'])) {
+                $formats = $statusData['format'];
+                // Check if single format
+                if (!is_numeric(key($formats))) {
+                    $formats = [$formats];
                 }
 
-                // Remove empty data
-                $format = array_filter($format, function($x) {
-                    return !empty($x);
-                });
+                foreach($formats as $format) {
+                    $cleanFormat = [];
 
-                // Resolve properties
-                $properties = array_flip(['status', 'created', 'started', 'finished', 'duration', 'converttime', 'convertedsize', 'queued']);
-                $cleanFormat['properties'] = array_intersect_key($format, $properties);
+                    $cleanFormat['id'] = $format['id'];
+                    unset($format['id']);
 
-                // Assumes rest of the data as options
-                $cleanFormat['options'] = array_diff_key($format, $properties);
+                    $cleanFormat['output'] = $format['output'];
+                    unset($format['output']);
 
-                $cleanData['formats'][] = $cleanFormat;
+                    $destinationsStatus = $format['destination_status'];
+                    $destinationsStatus = is_array($destinationsStatus) ? $destinationsStatus : [$destinationsStatus];
+                    unset($format['destination_status']);
+
+                    $destinations = $format['destination'];
+                    $destinations = is_array($destinations) ? $destinations : [$destinations];
+                    unset($format['destination']);
+
+                    foreach ($destinations as $index => $destination) {
+                        $cleanFormat['destinations'][$destination] = $destinationsStatus[$index];
+                    }
+
+                    // Remove empty data
+                    $format = array_filter($format, function($x) {
+                        return !empty($x);
+                    });
+
+                    // Resolve properties
+                    $properties = array_flip(['status', 'created', 'started', 'finished', 'duration', 'converttime', 'convertedsize', 'queued']);
+                    $cleanFormat['properties'] = array_intersect_key($format, $properties);
+
+                    // Assumes rest of the data as options
+                    $cleanFormat['options'] = array_diff_key($format, $properties);
+
+                    $cleanData['formats'][] = $cleanFormat;
+                }
             }
+
+            unset($statusData['format']);
+
+            $statusData = array_filter($statusData, function($x) {
+                return !empty($x);
+            });
+
+            $cleanData['properties'] = $statusData;
+
+            $statuses[] = $cleanData;
         }
 
-        unset($data['format']);
-
-        $data = array_filter($data, function($x) {
-            return !empty($x);
-        });
-
-        $cleanData['properties'] = $data;
-
-        return $cleanData;
+        return $statuses;
     }
 
     public static function parseMediaInfo($rawData)

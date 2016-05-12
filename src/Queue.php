@@ -433,15 +433,13 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
 
             if ($response === false) {
                 // TODO: get actual encoding error
-                $media->setMediaError('Request error');
                 throw new EncodingException('Request error');
             }
 
             $this->updateMedia($media, $response['MediaID'], Media::STATUS_NEW);
         } catch (EncodingExceptionInterface $ex) {
+            $media->setMediaError('Request error');
             return [false, $ex->getMessage()];
-        } finally {
-            $this->setMedia($media);
         }
 
         return [$response, true];
@@ -520,18 +518,10 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         return $response;
     }
 
-    public function getStatus(Media $media, $extended = false)
+    protected function updateMediaStatus($media, $data, $extended)
     {
-        $response = $this->execute(ACTION_MEDIA_GET_STATUS, $media);
-
-        if ($response === false) {
-            return false;
-        }
-
-        $data = Parser::parseMediaStatus($response);
-
         if (!$media->isNew() && $media->getId() != $data['id']) {
-            throw new Exception('Media Ids do not match');
+            throw new \Exception('Media Ids do not match');
         }
 
         $media->clearSources();
@@ -556,12 +546,47 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         }
 
         $this->updateMedia($media, $data['id'], $data['status'], $data['properties'], $extended);
+    }
+
+    public function getStatus(Media $media, $extended = false)
+    {
+        $response = $this->execute(ACTION_MEDIA_GET_STATUS, $media);
+
+        if ($response === false) {
+            return false;
+        }
+
+        $data = Parser::parseMediaStatus($response);
+
+        if (!$data) {
+            return false;
+        }
+
+        $this->updateMediaStatus($media, $data[0], $extended);
 
         return $response;
     }
 
-    public function getStatusAll($extended)
+    public function getStatusAll()
     {
+        $response = $this->execute(ACTION_MEDIA_GET_STATUS, $this->encoding, [
+            'extended' => 'yes'
+        ]);
 
+        if ($response === false) {
+            return false;
+        }
+
+        $data = Parser::parseMediaStatus($response, true);
+
+        if (!$data) {
+            return false;
+        }
+
+        foreach ($data as $statusData) {
+            $this->updateMediaStatus($media, $statusData, $extended);
+        }
+
+        return $response;
     }
 }
