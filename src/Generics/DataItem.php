@@ -129,4 +129,10 @@ class DataItem
 
         return $this->data[$property];
     }
+
+    public function clear()
+    {
+        $this->data = [];
+        $this->cleanNames = [];
+    }
 }
