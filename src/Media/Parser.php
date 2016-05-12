@@ -57,7 +57,7 @@ class Parser
         foreach ($data as $statusData) {
             $cleanData = [];
 
-            $cleanData['id'] = $data['id'];
+            $cleanData['id'] = $statusData['id'];
             unset($statusData['id']);
 
             $cleanData['userId'] = $statusData['userid'];
