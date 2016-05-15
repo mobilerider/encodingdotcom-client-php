@@ -27,4 +27,11 @@ class User extends \MobileRider\Encoding\Generics\DataItem
     {
         return $this->queue;
     }
+
+    public function attachQueue($queue)
+    {
+        $this->queue = $queue;
+        $this->queue->setClient($this->client);
+    }
 }
+
