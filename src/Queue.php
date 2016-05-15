@@ -8,6 +8,8 @@ use \MobileRider\Encoding\Media\Parser;
 use \MobileRider\Encoding\Event\ModelEvent;
 use \MobileRider\Encoding\Event\ModelPropertyChangedEvent;
 
+use \MobileRider\Encoding\Exception\EncodingException;
+
 class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countable
 {
     const LIST_LOCAL = 'local';
@@ -22,6 +24,7 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
     const EVENT_MEDIA_ERROR = 'event-media-error';
 
     protected $client = null;
+    protected $eventDispatcher = null;
 
     // New medias, exist only locally
     private $local = [];
@@ -39,7 +42,6 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
     public function __construct(Client $client, array $medias = null, array $options = null)
     {
         $this->client = $client;
-        $this->eventDispatcher = new \Symfony\Component\EventDispatcher\EventDispatcher();
 
         if ($medias) {
             $this->addMedias($medias);
@@ -48,6 +50,13 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         if ($options) {
             $this->setOptions($options);
         }
+
+        $this->initialize();
+    }
+
+    protected function initialize()
+    {
+        $this->eventDispatcher = new \Symfony\Component\EventDispatcher\EventDispatcher();
     }
 
     // Iterates over active medias in the queue
@@ -113,6 +122,13 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
                 }
             }
         }
+
+        $this->initialize();
+    }
+
+    public function setClient(Client $client)
+    {
+        $this->client = $client;
     }
 
     public function setOptions($options)
@@ -272,6 +288,10 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
                 $mediaId = is_array($media) ? implode(',', array_map(function($m) { return $m->getId(); }, $media)) : $media->getId() ;
                 $params['mediaid'] = $mediaId;
             }
+        }
+
+        if (!$this->client) {
+            throw new EncodingException('Client must be provided');
         }
 
         return $this->client->requestAction($action, $params);
@@ -592,3 +612,4 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         return $response;
     }
 }
+
