@@ -187,7 +187,12 @@ class Queue implements \IteratorAggregate, \ArrayAccess, \Serializable, \Countab
         if (!$listName) {
             list($listName, $index) = $this->getList($id);
 
-            return $listName ? $this->$listName[$index] : null;
+            if ($listName) {
+                $list = $this->$listName;
+                return $list[$index];
+            }
+
+            return;
         }
 
         $list = $this->$listName;
