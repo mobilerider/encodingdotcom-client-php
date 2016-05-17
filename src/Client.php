@@ -2,6 +2,9 @@
 
 namespace MobileRider\Encoding;
 
+use \GuzzleHttp\Exception\TransferException;
+use \MobileRider\Encoding\Service;
+
 class Client
 {
     const HEADER_CONTENT_TYPE = 'Content-Type';
@@ -15,9 +18,42 @@ class Client
         $this->userKey = $userKey;
     }
 
+    public function getUserId()
+    {
+        return $this->userId;
+    }
+
+    public function getHostUserKeyHash()
+    {
+        return md5(uniqid($_SERVER['HTTP_HOST'] . $this->userKey, true));
+    }
+
+    public function createHash($data)
+    {
+        return hash("sha256", $data . $this->userKey);
+    }
+
     private function isJSON($response)
     {
         return $response->hasHeader(self::HEADER_CONTENT_TYPE) ? strpos($response->getHeader(self::HEADER_CONTENT_TYPE)[0], 'json') !== false : false;
+    }
+
+    public function get($path, array $query = [])
+    {
+        try {
+            $response = Service::getHttpClient()->get('progress', [
+                'query' => $query
+            ]);
+        } catch (TransferException $ex) {
+            // TODO: handle response code if any
+            return [$ex->getMessage(), false];
+        }
+
+        if ($response->getStatusCode() >= 300) {
+            return [$response->getReasonPhrase(), false];
+        }
+
+        return [$response->getBody()->getContents(), true];
     }
 
     public function requestAction($action, array $params, array $headers = array())
@@ -35,7 +71,7 @@ class Client
 
         $payload = json_encode($payload);
 
-        $response = \MobileRider\Encoding\Service::getHttpClient()->post('', array(
+        $response = Service::getHttpClient()->post('', array(
             // This will include needed content type
             // 'ContentType' => 'application/x-www-form-urlencoded'
             \GuzzleHttp\RequestOptions::FORM_PARAMS => array(
