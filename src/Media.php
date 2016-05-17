@@ -200,6 +200,11 @@ class Media extends \MobileRider\Encoding\Generics\DataItem implements \Serializ
         $this->setStatus(self::STATUS_ERROR);
     }
 
+    public function getError()
+    {
+        return $this->error;
+    }
+
     public function isError()
     {
         return $this->getStatus() == self::STATUS_ERROR;
