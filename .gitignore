@@ -3,3 +3,5 @@ vendor/
 .bundle/
 
 test.php
+
+clover.xml
