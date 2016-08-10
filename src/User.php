@@ -2,7 +2,7 @@
 
 namespace MobileRider\Encoding;
 
-class User extends \MobileRider\Encoding\Generics\DataItem
+class User extends \MobileRider\Encoding\Generics\DataProxy
 {
     private $key = null;
     private $client = null;
@@ -16,7 +16,8 @@ class User extends \MobileRider\Encoding\Generics\DataItem
             throw new Exception('Empty user Id or Key');
         }
 
-        $this->initialize($id);
+        $this->set('id', $id);
+        // Keeps key private
         $this->key = $key;
 
         $this->client = new \MobileRider\Encoding\Client($id, $key);

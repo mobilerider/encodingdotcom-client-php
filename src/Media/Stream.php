@@ -2,77 +2,26 @@
 
 namespace MobileRider\Encoding\Media;
 
-class Stream implements \IteratorAggregate, \Countable
+class Stream extends \MobileRider\Encoding\Generics\Collection
 {
-    private $type = null;
-    private $tracks = [];
+    private $type;
 
-    public function __construct($type, array $tracks = null)
+    public function __construct($type, array $tracks = null, array $data = null)
     {
-        $this->type = $type;
+        $this->type = (string) $type;
+        $this->setModelClass('\\MobileRider\\Encoding\\Media\\Track');
 
         if ($tracks) {
             foreach ($tracks as $track) {
-                $this->setTrack($track);
+                if (is_array($track)) {
+                    $track = new Track($type, $track);
+                }
+                $this->add($track);
             }
         }
-    }
 
-    public function getIterator()
-    {
-        return new \ArrayIterator($this->tracks);
-    }
-
-    public function count()
-    {
-        return count($this->tracks);
-    }
-
-    public function getType()
-    {
-        return $this->type;
-    }
-
-    protected function setTrack(Track $track)
-    {
-        if (!$track->getId()) {
-            throw new \Exception('Invalid Id');
-        }
-
-        $oldTrack = $this->getTrack($track->getId());
-
-        $this->tracks[$track->getId()] = $track;
-
-        return $oldTrack;
-    }
-
-    public function getTrack($id)
-    {
-        if (!$this->hasTrack($id)) {
-            return null;
-        }
-
-        return $this->tracks[$id];
-    }
-
-    public function hasTrack($id)
-    {
-        return array_key_exists($id, $this->tracks);
-    }
-
-    public function clearTracks()
-    {
-        $this->tracks = [];
-    }
-
-    public function first()
-    {
-        if (!$this->tracks) {
-            return null;
-        }
-
-        rewind($this->tracks);
-
-        return current($this->tracks);
+        //if ($data) {
+            //$this->setData($data);
+        //}
     }
 }

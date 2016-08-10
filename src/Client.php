@@ -68,7 +68,7 @@ class Client
 
         // Add the rest of the params, do not override the ones already set
         $payload['query'] += $params;
-
+        // var_dump($payload);
         $payload = json_encode($payload);
 
         $response = Service::getHttpClient()->post('', array(
@@ -93,7 +93,7 @@ class Client
         if (isset($data['response']['errors'])) {
             throw new \Exception($data['response']['errors']['error']);
         }
-
+        //var_dump($data['response']);
         return $data['response'];
     }
 }

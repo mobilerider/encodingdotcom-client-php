@@ -8,7 +8,7 @@ class ModelEvent extends Event
 {
     protected $object;
 
-    public function setObject(\MobileRider\Encoding\Generics\DataItem $object)
+    public function setObject(\MobileRider\Encoding\Generics\Model $object)
     {
         if ($this->object) {
             throw new \Exception('Object already set');

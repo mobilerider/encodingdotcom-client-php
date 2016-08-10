@@ -2,73 +2,26 @@
 
 namespace MobileRider\Encoding\Media;
 
-class Format extends \MobileRider\Encoding\Generics\DataItem
+class Format extends \MobileRider\Encoding\Generics\StatusModel
 {
-    private $output = '';
-    private $destinations = [];
-
-    private $options = [];
-
-    public function __construct($output = '', array $destinations = null, array $options = null)
+    public function __construct($output = '', $destinations = null, array $data = null)
     {
-        $this->output = $output;
-        $this->setOptions($options);
+        if ($data) {
+            $this->setData($data);
+        }
+
+        if ($output) {
+            $this->output = $output;
+        }
 
         if ($destinations) {
-            foreach ($destinations as $index => $value) {
-                if (is_numeric($index)) {
-                    $destination = $value;
-                    $status = '';
-                } else {
-                    $destination = $index;
-                    $status = $value;
-                }
-
-                $this->setDestinationStatus($destination, $status);
-            }
+            $this->destination = (array) $destinations;
         }
-    }
-
-    public function setOptions($options)
-    {
-        $this->options = array_merge($this->options, $options);
-
-        return $this;
-    }
-
-    public function clearOptions()
-    {
-        $this->options = [];
-    }
-
-    public function getOptions()
-    {
-        return $this->options;
-    }
-
-    public function getOption($name)
-    {
-        return array_key_exists($name, $this->options) ? $this->options[$name] : null;
-    }
-
-    public function setDestinationStatus($destination, $status = '')
-    {
-        $this->destinations[$destination] = $status;
-    }
-
-    public function getDestinations()
-    {
-        return array_keys($this->destinations);
-    }
-
-    public function hasMultipleDestinations()
-    {
-        return count($this->destinations) > 1;
     }
 
     public function useVideoCodec($codec, $bitrate, array $settings = [])
     {
-        return $this->setOptions(array(
+        return $this->setData(array(
             'video_codec' => $codec,
             'bitrate' => $bitrate,
             'video_codec_parameters' => $settings
@@ -77,7 +30,7 @@ class Format extends \MobileRider\Encoding\Generics\DataItem
 
     public function useAudioCodec($codec, $bitrate, $channels = 2, $sampleRate = 44100, $volume = 100)
     {
-        return $this->setOptions(array(
+        return $this->setData(array(
             'audio_codec' => $codec,
             'audio_bitrate' => $bitrate,
             'audio_channels' => $channels,
@@ -88,7 +41,7 @@ class Format extends \MobileRider\Encoding\Generics\DataItem
 
     public function withinBitrates($min, $max)
     {
-        return $this->setOptions(array(
+        return $this->setData(array(
             'minrate' => $min,
             'maxrate' => $max
         ));
@@ -96,7 +49,7 @@ class Format extends \MobileRider\Encoding\Generics\DataItem
 
     public function segment($start, $duration = null)
     {
-        return $this->setOptions(array(
+        return $this->setData(array(
             'minrate' => $min,
             'maxrate' => $max
         ));
@@ -104,12 +57,24 @@ class Format extends \MobileRider\Encoding\Generics\DataItem
 
     public function addMultipleOption($name, array $value)
     {
-        if ($this->hasOption($name)) {
-            $value = array_merge($this->getOption($name), $value);
+        if (!$value) {
+            return $this;
         }
 
-        return $this->setOptions(array(
-            $name => implode(',', $value)
+        $existent = '';
+
+        if ($this->getOptions()->has($name)) {
+            $existent = $this->getOptions()->get($name);
+        }
+
+        $value = implode(',', array_filter('strlen', $value));
+
+        if (!$value) {
+            return $this;
+        }
+
+        return $this->setData(array(
+            $name => $existent . ',' . $value
         ));
     }
 
@@ -130,7 +95,7 @@ class Format extends \MobileRider\Encoding\Generics\DataItem
 
     public function setSize($width, $height)
     {
-        return $this->setOptions(array(
+        return $this->setData(array(
             'size' => $width . 'x' . $height
         ));
     }

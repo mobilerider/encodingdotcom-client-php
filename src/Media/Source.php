@@ -2,22 +2,81 @@
 
 namespace MobileRider\Encoding\Media;
 
-class Source extends \MobileRider\Encoding\Generics\DataItem
+class Source extends \MobileRider\Encoding\Generics\Model
 {
-    private $location = '';
+    private $location;
     private $isExtended = false;
 
-    private $options = [];
-    private $streams = [];
+    private $_streams;
 
-    public function __construct($location, array $options = null)
+    public function __construct($location = '', array $streams = null, array $data = null)
     {
-        $this->setLocation($location);
+        $this->location = (string) $location;
+
+        if ($streams) {
+            $this->streams = $streams;
+        }
+
+        if ($data) {
+            $this->setData($data);
+        }
     }
 
-    private function setLocation($location)
+    public function set($name, $value)
     {
-        $this->location = $location;
+        switch ($name) {
+        case 'streams':
+            $streams = $this->getStreams()->clear();
+            $value = (array) $value;
+
+            if ($value) {
+                foreach ($value as $index => $stream) {
+                    if (is_array($stream)) {
+                        if (!is_numeric($index)) {
+                            // $index => Type, $stream => Tracks
+                            $stream = new Stream($index, $stream);
+                        } else {
+                            // $stream => Data
+                            $stream = new Stream('', null, $stream);
+                        }
+                    }
+
+                    $streams[] = $stream;
+                }
+            }
+            break;
+        default:
+            return parent::set($name, $value);
+        }
+    }
+
+    public function get($name)
+    {
+        switch ($name) {
+        case 'streams':
+            return array_map('as_array', $this->getStreams()->asArray());
+        default:
+            return parent::get($name);
+        }
+    }
+
+    public function getStreams()
+    {
+        if (is_null($this->_streams)) {
+            $this->_streams = new \MobileRider\Encoding\Generics\Collection();
+            $this->_streams->setModelClass('\\MobileRider\\Encoding\\Media\\Stream');
+        }
+
+        return $this->_streams;
+    }
+
+    public function getData()
+    {
+        $data = parent::getData();
+
+        $data['streams'] = $this->streams;
+
+        return $data;
     }
 
     public function getLocation()
@@ -33,38 +92,6 @@ class Source extends \MobileRider\Encoding\Generics\DataItem
     public function update(array $data, $extended = false)
     {
         $this->setData($data);
-
-        if ($this->getSize()) {
-            list($width, $height) = explode('x', $this->getSize());
-            $this->set('width', $width);
-            $this->set('height', $height);
-        }
-
         $this->isExtended = $extended;
-    }
-
-    public function isExtended()
-    {
-        return $this->isExtended;
-    }
-
-    public function setStream(Stream $stream)
-    {
-        $this->streams[$stream->getType()] = $stream;
-    }
-
-    public function createStream($type, array $tracks = null)
-    {
-        $this->setStream(new Stream($type, $tracks));
-    }
-
-    public function clearStreams()
-    {
-        $this->streams = [];
-    }
-
-    public function getBitrateNumber()
-    {
-        return intval(rtrim($this->getBitrate(), 'k'));
     }
 }

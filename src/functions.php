@@ -1,5 +1,27 @@
 <?php
 
+function as_array(\MobileRider\Encoding\Generics\DataHolderInterface $obj)
+{
+    return $obj->asArray();
+}
+
+
+function uid($regenerate = false)
+{
+    static $uid;
+
+    if (!$uid || $regenerate) {
+        $uid = uniqid();
+    }
+
+    return $uid;
+}
+
+function xstring($regenerate = false)
+{
+    return uid($regenerate);
+}
+
 // Taken from http://php.net/manual/en/class.simplexmliterator.php
 function sxi_to_array(\SimpleXMLIterator $sxi)
 {

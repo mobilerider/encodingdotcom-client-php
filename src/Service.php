@@ -52,18 +52,20 @@ class Service
 
     public function prepare($source, array $formats = null, array $options = null)
     {
-        $media = new Media((array)$source, $formats, $options);
+        $media = new Media($source, $formats, $options);
+        // Sets media in hold so it won't be processed
+        $media->hold();
 
-        $this->getUser()->getQueue()->add($media, false);
+        $this->getQueue()->add($media);
 
         return $media;
     }
 
     public function encode($source, array $formats, array $options = null)
     {
-        $media = new Media((array)$source, $formats, $options);
-
-        $this->getUser()->getQueue()->add($media);
+        $media = new Media($source, $formats, $options);
+var_dump($media->getData());
+        $this->getQueue()->add($media);
 
         return $media;
     }

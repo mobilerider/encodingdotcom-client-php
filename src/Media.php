@@ -2,115 +2,151 @@
 
 namespace MobileRider\Encoding;
 
-class Media extends \MobileRider\Encoding\Generics\DataItem implements \Serializable
+use \MobileRider\Encoding\Generics\Collection;
+
+class Media extends \MobileRider\Encoding\Generics\StatusModel
 {
-    const STATUS_NEW         = 'New';
-    const STATUS_DOWNLOADING = 'Downloading';
-    const STATUS_DOWNLOADED  = 'Downloaded';
-    const STATUS_READY       = 'Ready to process';
-    const STATUS_WAITING     = 'Waiting for encoder';
-    const STATUS_PROCESSING  = 'Processing';
-    const STATUS_SAVING      = 'Saving';
-    const STATUS_FINISHED    = 'Finished';
-    const STATUS_ERROR       = 'Error';
-    const STATUS_STOPPED     = 'Stopped Perform';
-
-    private static $availableStatuses = array(
-        self::STATUS_NEW,
-        self::STATUS_DOWNLOADING,
-        self::STATUS_DOWNLOADED,
-        self::STATUS_READY,
-        self::STATUS_WAITING,
-        self::STATUS_PROCESSING,
-        self::STATUS_SAVING,
-        self::STATUS_FINISHED,
-        self::STATUS_ERROR,
-        self::STATUS_STOPPED
-    );
-
-    private $sources = [];
-    private $formats = [];
-    private $options = [];
-    private $error = '';
+    private $_sources;
+    private $_formats;
+    private $options;
 
     private $isExtended = false;
-    private $isOnHold = false;
+    private $onHold = false;
 
-    public function __construct(array $sources = null, array $formats = null, array $options = null)
+    public function __construct($sources = null, array $formats = null, array $data = null)
     {
         if ($sources) {
-            foreach ($sources as $source) {
-                $this->addSource($source);
-            }
+            $this->sources = $sources;
         }
 
         if ($formats) {
-            foreach ($formats as $format) {
-                $this->addFormat($format);
-            }
+            $this->formats = $formats;
+        }
+
+        if ($data) {
+            $this->setData($data);
         }
     }
 
-    public function addSource($source)
+    public function set($name, $value)
     {
-        if (is_string($source)) {
-            $source = new \MobileRider\Encoding\Media\Source($source);
+        switch ($name) {
+        case 'source':
+        case 'sources':
+        case 'sourcefile':
+            $this->setSources($value);
+            break;
+        case 'formats':
+        case 'format':
+            $this->setFormats($value);
+            break;
+        default:
+            return parent::set($name, $value);
         }
+    }
 
-        $this->sources[] = $source;
+    public function get($name)
+    {
+        switch ($name) {
+        case 'source':
+        case 'sources':
+        case 'sourcefile':
+            return array_map('as_array', $this->getSources()->asArray());
+        case 'formats':
+        case 'format':
+            return array_map('as_array', $this->getFormats()->asArray());
+        default:
+            return parent::get($name);
+        }
     }
 
     public function getSources()
     {
-        return $this->sources;
+        if (is_null($this->_sources)) {
+            $this->_sources = new Collection();
+            $this->_sources->setModelClass('\\MobileRider\\Encoding\\Media\\Source');
+        }
+
+        return $this->_sources;
     }
 
-    public function clearSources()
+    public function setSources($value)
     {
-        $this->sources = [];
-    }
+        $sources = $this->getSources()->clear();
+        $value = (array) $value;
 
-    public function hasSources()
-    {
-        return (bool) $this->sources;
-    }
+        if ($value) {
+            foreach ($value as $index => $source) {
+                if (!$source) {
+                    continue;
+                }
 
-    public function addFormat(\MobileRider\Encoding\Media\Format $format)
-    {
-        $this->formats[] = $format;
-    }
+                if (!is_object($source)) {
+                    if (!is_numeric($index)) {
+                        $location = $index;
+                        $data = $source;
+                    } else if (is_array($source)) {
+                        $location = '';
+                        $data = $source;
+                    } else {
+                        $location = $source;
+                        $data = null;
+                    }
 
-    public function clearFormats()
-    {
-        $this->formats = [];
-    }
+                    $source = new Media\Source($location, null, $data);
+                }
 
-    public function hasFormats()
-    {
-        return (bool) $this->formats;
+                $sources[] = $source;
+            }
+        }
     }
 
     public function getFormats()
     {
-        return $this->formats;
+        if (is_null($this->_formats)) {
+            $this->_formats = new Collection();
+            $this->_formats->setModelClass('\\MobileRider\\Encoding\\Media\\Format');
+        }
+
+        return $this->_formats;
+    }
+
+    public function setFormats($value)
+    {
+        // Check whether value is directly a format or a list of formats
+        $value = isset($value[0]) ? $value : [$value];
+        $formats = $this->getFormats()->clear();
+
+        if ($value) {
+            foreach ($value as $index => $format) {
+                if (!$format) {
+                    continue;
+                }
+
+                if (is_array($format)) {
+                    $output = !is_numeric($index) ? $index : null;
+                    // $format => Data
+                    $format = new Media\Format($output, null, $format);
+                }
+
+                $formats[] = $format;
+            }
+        }
     }
 
     public function isOnHold()
     {
-        return $this->getStatus() == self::STATUS_READY && $this->isOnHold;
+        return $this->onHold;
+    }
+
+    public function isQueued()
+    {
+        return !$this->isNew() && !$this->isOver();
     }
 
     public function isEncoding()
     {
-        return !$this->isNew() && !$this->isOnHold() && in_array($this->getStatus(), array(
-            self::STATUS_NEW, // We assume NEW is the starting status of the encoding process
-            self::STATUS_DOWNLOADED,
-            self::STATUS_DOWNLOADING,
-            self::STATUS_READY,
-            self::STATUS_WAITING,
-            self::STATUS_PROCESSING,
-            self::STATUS_SAVING
-        ));
+        return $this->isProcessing() || $this->isSaving();
     }
 
     public function isExtended()
@@ -120,94 +156,46 @@ class Media extends \MobileRider\Encoding\Generics\DataItem implements \Serializ
 
     public function isSourceExtended()
     {
-        if (!$this->hasSources()) {
+        if ($this->getSources()->isEmpty()) {
             return false;
         }
 
         // Assume if one is extended all the others are
         // all the sources should be updated in the same request
-        return $this->getSources()[0]->isExtended();
+        return $this->getSources()->first()->isExtended();
     }
 
-    public function hasMultipleSources()
+    public function getData()
     {
-        return count($this->sources) > 1;
+        $data = parent::getData();
+        $data['source'] = array_map('strval', $this->getSources()->asArray());
+        $data['format'] = $this->formats;
+
+        return $data;
     }
 
-    public function setOptions($options)
+    public function getPreparedParams()
     {
-        if (!$options) {
-            return false;
-        }
-
-        $this->options = array_merge($this->options, $options);
+        return $this->getData();
     }
 
-    public function getOptions()
-    {
-        return $this->options;
-    }
-
-    public function clearOptions()
-    {
-        $this->options = [];
-    }
-
-    public function setStatus($status)
-    {
-        $this->set('status', $status);
-    }
-
-    public function update(array $data, array $options = null, $extended = false)
+    public function update(array $data, $extended = false)
     {
         $this->setData($data);
-        $this->setOptions($options);
         $this->isExtended = $extended;
+
+        return $this;
     }
 
-    public function serialize()
+    public function hold()
     {
-        return serialize([
-            'id' => $this->getId(),
-            'isOnHold' => $this->isOnHold,
-            'data' => [
-                'status' => $this->getStatus()
-            ]
-        ]);
-    }
+        if (!$this->isQueued()) {
+            return [false, 'Already in queue'];
+        }
 
-    public function unserialize($serialized)
-    {
-        $data = unserialize($serialized);
+        $this->onHold = true;
 
-        $this->isOnHold = $data['isOnHold'];
-        $this->initialize($data['id'], $data['data']);
-    }
-
-    public function isReady()
-    {
-        return $this->getStatus() == self::STATUS_READY;
-    }
-
-    public function isDone()
-    {
-        return $this->getStatus() == self::STATUS_FINISHED;
-    }
-
-    public function setError($msg)
-    {
-        $this->error = $msg;
-        $this->setStatus(self::STATUS_ERROR);
-    }
-
-    public function getError()
-    {
-        return $this->error;
-    }
-
-    public function isError()
-    {
-        return $this->getStatus() == self::STATUS_ERROR;
+        return [true, OK];
     }
 
     public function hasError()
