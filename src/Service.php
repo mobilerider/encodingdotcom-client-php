@@ -62,7 +62,7 @@ class Service
     public function encode($source, array $formats, array $options = null)
     {
         $media = new Media($source, $formats, $options);
-var_dump($media->getData());
+
         $this->getQueue()->add($media);
 
         return $media;
