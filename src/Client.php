@@ -2,7 +2,7 @@
 
 namespace MobileRider\Encoding;
 
-use \GuzzleHttp\Exception\TransferException;
+use \Guzzle\Http\Exception\TransferException;
 use \MobileRider\Encoding\Service;
 
 class Client
@@ -35,7 +35,9 @@ class Client
 
     private function isJSON($response)
     {
-        return $response->hasHeader(self::HEADER_CONTENT_TYPE) ? strpos($response->getHeader(self::HEADER_CONTENT_TYPE)[0], 'json') !== false : false;
+        $type = $response->getHeader(self::HEADER_CONTENT_TYPE);
+
+        return $type ? strpos($type, 'json') !== false : false;
     }
 
     public function get($path, array $query = [])
@@ -71,13 +73,9 @@ class Client
         // var_dump($payload);
         $payload = json_encode($payload);
 
-        $response = Service::getHttpClient()->post('', array(
-            // This will include needed content type
-            // 'ContentType' => 'application/x-www-form-urlencoded'
-            \GuzzleHttp\RequestOptions::FORM_PARAMS => array(
-                'json' => $payload
-            )
-        ));
+        $response = Service::getHttpClient()->post('', [
+            'ContentType' => 'application/x-www-form-urlencoded',
+        ], ['json' => $payload])->send();
 
         if ($response->getStatusCode() >= 300) {
             throw new \Exception('Unsuccessful response: ' . $response->getReasonPhrase());
@@ -88,7 +86,7 @@ class Client
         }
 
         // Return json decoded array
-        $data = json_decode($response->getBody()->getContents(), true);
+        $data = json_decode((string)$response->getBody(), true);
 
         if (isset($data['response']['errors'])) {
             throw new \Exception($data['response']['errors']['error']);
