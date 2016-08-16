@@ -13,7 +13,7 @@ class User extends \MobileRider\Encoding\Generics\DataProxy
     public function __construct($id, $key)
     {
         if (empty($id && $key)) {
-            throw new Exception('Empty user Id or Key');
+            throw new \Exception('Empty user Id or Key');
         }
 
         $this->set('id', $id);
