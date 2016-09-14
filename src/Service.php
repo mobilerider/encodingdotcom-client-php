@@ -20,10 +20,12 @@ class Service
     public static function getHttpClient()
     {
         if (!self::$httpClient) {
-            self::$httpClient = new \Guzzle\Http\Client(self::API_URL, array(
-                'timeout' => 20,
-                'connect_timeout' => 1.5
-            ));
+            self::$httpClient = new \GuzzleHttp\Client([
+                // Base URI is used with relative requests
+                'base_uri' => self::API_URL,
+                //         // You can set any number of default request options.
+                'timeout'  => 5.0,
+            ]);
         }
 
         return self::$httpClient;
